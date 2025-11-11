@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Donut Haven 🍩</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- SPLASH SCREEN -->
+  <div id="splashScreen" class="splash-screen active">
+    <div class="splash-content">
+      <img src="logo.png" alt="Donut Haven Logo" class="splash-logo">
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-left">
+      <button id="hamburger" class="hamburger" aria-label="Toggle menu">☰</button>
+      <div class="logo">🍩 Donut Haven</div>
+    </div>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#" id="homeLink">Home</a></li>
+      <li><a href="#" id="menuLink">Menu</a></li>
+      <li><a href="#" id="cartLink">Cart</a></li>
+      <li><a href="#" id="ordersLink">Orders</a></li>
+      <li><a href="#" id="orderHistoryLink" style="display:none;">Order History</a></li>
+      <li><a href="#" id="manageUsersLink" style="display:none;">Manage Users</a></li>
+      <li><a href="#" id="loginHistoryLink" style="display:none;">Login History</a></li>
+      <li><a href="#" id="tallyProductLink" style="display:none;">Tally Product</a></li>
+    </ul>
+
+    <ul class="nav-auth">
+      <li id="userDisplay" style="display:none;"></li>
+
+      <!-- ME dropdown (hidden until login) -->
+      <li id="meMenu" class="dropdown" style="display:none;">
+        <button class="dropbtn" id="meBtn">ME ▾</button>
+        <div class="dropdown-content" id="meDropdown">
+          <a href="#" id="viewInfoBtn">My Info</a>
+          <a href="#" id="logoutMenuBtn">Logout</a>
+        </div>
+      </li>
+
+      <li><a href="#" id="signupLink">Sign Up</a></li>
+      <li><a href="#" id="loginLink">Login</a></li>
+      <li><a href="#" id="logoutLink" style="display:none;">Logout</a></li>
+    </ul>
+  </nav>
+
+<!-- HOME SECTION -->
+<section id="homeSection" class="active">
+  <div class="home-container">
+    <!-- Welcome / Greeting -->
+    <header class="welcome-header">
+      <h1>Welcome to Donut Haven 🍩</h1>
+      <p class="lead">Delicious donuts and drinks made fresh every day — warm, sweet, and golden.</p>
+      <div class="home-actions">
+        <button onclick="showMenu()" class="primary-btn">Order Now</button>
+      </div>
+    </header>
+
+    <!-- About Us -->
+    <div id="aboutSection" class="home-block about-block glass-box">
+      <h2>About Us</h2>
+      <p>At Donut Haven, we bring sweetness to every bite. Our donuts are handcrafted daily using high-quality ingredients and a sprinkle of love. Whether you're here for a quick snack or a celebration, we'd love to serve you.</p>
+    </div>
+
+    <!-- Mission & Vision -->
+    <div id="missionSection" class="home-block glass-box">
+      <h2>Mission & Vision</h2>
+      <p><strong>Mission:</strong> To spread joy through quality baked goods and friendly service.</p>
+      <p><strong>Vision:</strong> To be the neighborhood's favorite spot for donuts and good times.</p>
+    </div>
+
+    <!-- Reviews -->
+    <div id="reviewsSection" class="home-block reviews-block glass-box">
+      <h2>Customer Reviews</h2>
+      <div class="reviews-cards" id="reviewsCards"></div>
+
+      <!-- Add review form - visible only to logged-in users -->
+      <div id="addReviewArea" style="display:none;" class="add-review-area">
+        <h3>Add your review</h3>
+        <label for="reviewStars">Rating</label>
+        <select id="reviewStars">
+          <option value="5">5 — Excellent</option>
+          <option value="4">4 — Very Good</option>
+          <option value="3">3 — Good</option>
+          <option value="2">2 — Fair</option>
+          <option value="1">1 — Poor</option>
+        </select>
+        <textarea id="reviewText" placeholder="Write your review..." rows="3"></textarea>
+        <div class="buttons">
+          <button onclick="submitReview()" class="primary-btn">Submit Review</button>
+          <button onclick="clearReviewForm()" class="secondary-btn">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div id="mapSection" class="home-block map-block glass-box">
+      <h2>Find Us</h2>
+      <div class="map-wrapper">
+        <iframe
+          src="https://www.google.com/maps?q=Manila+Philippines&output=embed"
+          width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <!-- Contact Us -->
+    <div id="contactSection" class="home-block contact-block glass-box">
+      <h2>Contact Us</h2>
+      <p>📞 <strong>0912-345-6789</strong></p>
+      <p>📧 <strong>donut.haven@example.com</strong></p>
+      <div class="social-links small">
+        <a href="https://facebook.com" target="_blank" rel="noopener"><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"></a>
+        <a href="https://instagram.com" target="_blank" rel="noopener"><img src="https://cdn-icons-png.flaticon.com/512/733/733558.png" alt="Instagram"></a>
+        <a href="https://twitter.com" target="_blank" rel="noopener"><img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Twitter"></a>
+        <a href="https://tiktok.com" target="_blank" rel="noopener"><img src="https://cdn-icons-png.flaticon.com/512/3046/3046126.png" alt="TikTok"></a>
+      </div>
+    </div>
+
+    <footer>
+      <p></p>
+    </footer>
+  </div>
+</section>
+
+  <!-- MENU -->
+  <section id="menuSection">
+    <h2>Our Menu</h2>
+    <div id="adminControls" style="display:none; margin-bottom: 10px;">
+      <button onclick="openAddMenuModal()">➕ Add Menu</button>
+      <button onclick="openRemoveMenuModal()">❌ Remove Menu</button>
+    </div>
+    <div class="categories">
+      <button onclick="showCategory('all')">All</button>
+      <button onclick="showCategory('donuts')">Donuts</button>
+      <button onclick="showCategory('munchkins')">Munchkins</button>
+      <button onclick="showCategory('bundles')">Bundles</button>
+      <button onclick="showCategory('drinks')">Drinks</button>
+      <button onclick="showCategory('combos')">Combos</button>
+    </div>
+    <div id="menuItems" class="menu-grid"></div>
+  </section>
+
+  <!-- CART -->
+  <section id="cartSection">
+    <h2>Your Cart 🛒</h2>
+    <div id="cartItems"></div>
+    <div id="cartTotal"></div>
+    <button id="checkoutBtn" onclick="openPaymentModal()">Checkout</button>
+  </section>
+
+  <!-- ORDERS -->
+  <section id="ordersSection">
+    <h2>Your Orders</h2>
+    <div id="orderList"></div>
+  </section>
+
+  <!-- ORDER HISTORY -->
+  <section id="orderHistorySection">
+    <h2>Order History</h2>
+    <div id="historyList"></div>
+  </section>
+
+  <!-- USER DASHBOARD SECTION -->
+  <section id="userDashboardSection">
+    <div class="dashboard-container">
+      <h2>My Dashboard</h2>
+      
+      <div class="dashboard-grid">
+        <!-- Personal Information Card -->
+        <div class="dashboard-card user-info-card">
+          <h3>Personal Information</h3>
+          <div class="user-info-content">
+            <div class="info-field">
+              <label>Username:</label>
+              <input type="text" id="dbUsername" readonly>
+            </div>
+            <div class="info-field">
+              <label>Role:</label>
+              <input type="text" id="dbRole" readonly>
+            </div>
+            <div class="info-field">
+              <label>Email:</label>
+              <input type="email" id="dbEmail" readonly>
+            </div>
+            <div class="info-field">
+              <label>Contact:</label>
+              <input type="text" id="dbContact" readonly>
+            </div>
+            <div class="info-field">
+              <label>Address:</label>
+              <textarea id="dbAddress" readonly rows="3"></textarea>
+            </div>
+            <div class="info-buttons">
+              <button id="editInfoBtn" class="edit-btn">Edit</button>
+              <button id="updateInfoBtn" class="update-btn" disabled>Update</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="dashboard-card password-card">
+          <h3>Change Password</h3>
+          <div class="password-form">
+            <div class="form-field">
+              <label>Current Password:</label>
+              <input type="password" id="currentPassword">
+            </div>
+            <div class="form-field">
+              <label>New Password:</label>
+              <input type="password" id="newPassword">
+            </div>
+            <div class="form-field">
+              <label>Confirm New Password:</label>
+              <input type="password" id="confirmPassword">
+            </div>
+            <button id="changePasswordBtn" class="change-password-btn">Change Password</button>
+          </div>
+        </div>
+
+        <!-- Spending Analytics Card (only for customers) -->
+        <div id="analyticsCard" class="dashboard-card analytics-card">
+          <h3>Spending Analytics</h3>
+          <div class="analytics-controls">
+            <select id="timeFilter">
+              <option value="week">Last Week</option>
+              <option value="month">Last Month</option>
+              <option value="year">Last Year</option>
+              <option value="all">All Time</option>
+            </select>
+          </div>
+          <div class="chart-container">
+            <canvas id="spendingChart"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <div class="dashboard-buttons">
+        <button onclick="backToMenu()" class="back-btn">Back to Menu</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHECKOUT CONFIRMATION -->
+  <section id="checkoutSection">
+    <div class="confirmation-box">
+      <div class="checkmark">✔</div>
+      <h2>Payment Successful!</h2>
+      <p>Thank you for your order 🍩</p>
+      <div id="summaryBox"></div>
+      <button onclick="backToMenu()">Back to Menu</button>
+    </div>
+  </section>
+
+  <!-- PAYMENT SUCCESS POPUP -->
+<div id="paymentPopup">
+  <div class="popup-box">
+    <div class="checkmark">✔</div>
+    <h2>Payment Successful!</h2>
+    <p>Thank you for your order 🍩</p>
+  </div>
+</div>
+
+<!-- RECEIPT -->
+<section id="receiptSection">
+  <div class="receipt-box">
+    <div class="receipt-content" id="receiptContent"></div>
+    <div class="receipt-buttons">
+      <button onclick="saveReceiptAsPDF()">💾 Save as PDF</button>
+      <button onclick="backToMenu()">⬅ Back to Menu</button>
+    </div>
+  </div>
+</section>
+
+<!-- LOGIN -->
+  <section id="loginSection">
+    <div class="login-box glass-box">
+      <h2>Login</h2>
+      <input type="email" id="email" placeholder="Email" />
+      <input type="password" id="password" placeholder="Password" />
+      <div class="login-buttons">
+        <button onclick="login()" class="primary-btn">Login</button>
+      </div>
+      <p>Or browse the menu as a guest.</p>
+    </div>
+  </section>
+
+  <!-- LOGIN SUCCESS POPUP -->
+  <div id="loginSuccessPopup" class="popup-box" style="display:none;">
+    <div class="popup-content glass-box">
+      <div class="checkmark">✔</div>
+      <h3>Successfully Logged In!</h3>
+    </div>
+  </div>
+
+  <!-- MANAGE USERS MODAL -->
+  <div id="manageUsersModal" class="modal">
+    <div class="modal-content manage-users-modal">
+      <div class="manage-users-header">
+        <h2>Manage Users</h2>
+        <button class="close-btn" onclick="closeManageUsers()">×</button>
+      </div>
+
+      <div class="user-management-container">
+        <!-- Users Table -->
+        <div class="users-table-section">
+          <div class="table-header">
+            <h3>User List</h3>
+            <div class="table-controls">
+              <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterUsers('all')">All</button>
+                <button class="filter-btn" onclick="filterUsers('customer')">Customer</button>
+                <button class="filter-btn" onclick="filterUsers('staff')">Staff</button>
+                <button class="filter-btn" onclick="filterUsers('admin')">Admin</button>
+              </div>
+              <button class="add-user-toggle-btn" onclick="toggleAddUserForm()">➕ Add User</button>
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table id="usersTable" class="users-table">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Role</th>
+                  <th>Email</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="manageUsersList">
+                <!-- Users will be populated here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- User Details Section -->
+        <div class="user-details-section" id="userDetailsSection" style="display: none;">
+          <div class="details-header">
+            <h3>User Details</h3>
+            <button class="back-btn" onclick="hideUserDetails()">← Back</button>
+          </div>
+          <div class="user-details" id="userDetails">
+            <!-- User details will be populated here -->
+          </div>
+        </div>
+
+        <!-- Add User Form -->
+        <div class="add-user-section" id="addUserSection" style="display: none;">
+          <div class="add-user-header">
+            <h3>Add New User</h3>
+            <button class="close-add-user-btn" onclick="toggleAddUserForm()">×</button>
+          </div>
+          <div class="add-user-form">
+            <input type="text" id="newUserName" placeholder="Username" required>
+            <input type="email" id="newUserEmail" placeholder="Email" required>
+            <input type="password" id="newUserPass" placeholder="Password" required>
+            <input type="text" id="newUserContact" placeholder="Contact Number">
+            <input type="text" id="newUserAddress" placeholder="Address">
+            <select id="newUserRole">
+              <option value="customer">Customer</option>
+              <option value="staff">Staff</option>
+              <option value="admin">Admin</option>
+            </select>
+            <div class="buttons manage-users-buttons">
+              <button onclick="addUser()">Add User</button>
+              <button onclick="toggleAddUserForm()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN HISTORY MODAL -->
+  <div id="loginHistoryModal" class="modal">
+    <div class="modal-content login-history-modal">
+      <div class="login-history-header">
+        <h2>Login History</h2>
+        <button class="close-btn" onclick="closeLoginHistoryModal()">×</button>
+      </div>
+      
+      <div class="login-history-container">
+        <div class="login-history-controls">
+          <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterLoginHistory('all')">All</button>
+            <button class="filter-btn" onclick="filterLoginHistory('customer')">Customer</button>
+            <button class="filter-btn" onclick="filterLoginHistory('staff')">Staff</button>
+            <button class="filter-btn" onclick="filterLoginHistory('admin')">Admin</button>
+          </div>
+          <button class="clear-all-btn" onclick="clearAllLoginHistory()">🗑️ Clear All</button>
+        </div>
+        
+        <div class="table-container">
+          <table class="login-history-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="loginHistoryList">
+              <!-- Login history will be populated here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="login-history-summary">
+          <p>Total Logins: <span id="totalLogins">0</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TALLY PRODUCT MODAL -->
+  <div id="tallyProductModal" class="modal">
+    <div class="modal-content tally-product-modal">
+      <div class="tally-product-header">
+        <h2>Product Sales Tally</h2>
+        <button class="close-btn" onclick="closeTallyProductModal()">×</button>
+      </div>
+      
+      <div class="tally-product-container">
+        <div class="tally-controls">
+          <div class="control-group">
+            <label for="tallyCategoryFilter">Category:</label>
+            <select id="tallyCategoryFilter" onchange="updateTallyChart()">
+              <option value="all">All Categories</option>
+              <option value="donuts">Donuts</option>
+              <option value="munchkins">Munchkins</option>
+              <option value="bundles">Bundles</option>
+              <option value="drinks">Drinks</option>
+              <option value="combos">Combos</option>
+            </select>
+          </div>
+          
+          <div class="control-group">
+            <label for="tallyTimeFilter">Time Period:</label>
+            <select id="tallyTimeFilter" onchange="updateTallyChart()">
+              <option value="all">All Time</option>
+              <option value="week">Last Week</option>
+              <option value="month">Last Month</option>
+              <option value="year">Last Year</option>
+            </select>
+          </div>
+          
+          <div class="control-group">
+            <label for="tallyChartType">Chart Type:</label>
+            <select id="tallyChartType" onchange="updateTallyChart()">
+              <option value="bar">Bar Chart</option>
+              <option value="line">Line Chart</option>
+              <option value="pie">Pie Chart</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="chart-container">
+          <canvas id="tallyChart"></canvas>
+        </div>
+        
+        <div class="tally-summary">
+          <div class="summary-stats">
+            <div class="stat-card">
+              <h3>Total Sales</h3>
+              <p id="totalSales">₱0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Total Orders</h3>
+              <p id="totalOrders">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Best Seller</h3>
+              <p id="bestSeller">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYMENT MODAL -->
+  <div id="paymentModal" class="modal">
+    <div class="modal-content">
+      <h2>Payment & Delivery</h2>
+      <input type="text" id="payName" placeholder="Full name">
+      <input type="text" id="payContact" placeholder="Contact number">
+      <input type="text" id="payAddress" placeholder="Delivery address">
+      <div class="payment-options">
+        <button onclick="selectPayment('COD')">💵 COD</button>
+        <button onclick="selectPayment('GCash')">📱 GCash</button>
+        <button onclick="selectPayment('Card')">💳 Card</button>
+      </div>
+      
+      <!-- GCash Form (initially hidden) -->
+      <div id="gcashForm" class="payment-method-form" style="display:none;">
+        <div class="gcash-header">
+          <h3>📱 GCash Payment</h3>
+          <p class="gcash-instruction">Send payment to our GCash number:</p>
+          <div class="gcash-number">0912-345-6789</div>
+        </div>
+        
+        <div class="form-fields">
+          <div class="form-group">
+            <label for="gcashUserNumber">Your GCash Number</label>
+            <input type="text" id="gcashUserNumber" placeholder="09XX-XXX-XXXX" maxlength="11">
+          </div>
+          
+          <div class="form-group">
+            <label for="gcashReference">Reference Number</label>
+            <input type="text" id="gcashReference" placeholder="Enter reference number">
+          </div>
+          
+          <div class="form-group">
+            <label for="gcashAmount">Amount to Send</label>
+            <input type="text" id="gcashAmount" readonly class="amount-field">
+          </div>
+        </div>
+        
+        <div class="gcash-buttons">
+          <button onclick="confirmGCashPayment()" class="confirm-gcash-btn">✅ Confirm GCash Payment</button>
+          <button onclick="cancelGCash()" class="cancel-gcash-btn">↩ Back to Payment Methods</button>
+        </div>
+      </div>
+      
+      <div class="payment-cancel">
+        <button onclick="closePaymentModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGNUP MODAL -->
+  <div id="signupModal" class="modal">
+    <div class="modal-content">
+      <h2>Sign Up</h2>
+      <input type="text" id="signupUsername" placeholder="Username">
+      <input type="email" id="signupEmail" placeholder="Email">
+      <input type="password" id="signupPassword" placeholder="Password">
+      <input type="text" id="signupContact" placeholder="Contact number">
+      <input type="text" id="signupAddress" placeholder="Address">
+      <div class="buttons signup-buttons">
+        <button onclick="signup()">Sign Up</button>
+        <button onclick="closeSignup()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- USER INFO MODAL -->
+<div id="userInfoModal" class="modal">
+  <div class="modal-content user-info-box">
+    <h2>Personal Information</h2>
+    <div class="info-row">
+      <span class="label">Username :</span>
+      <span class="value" id="infoUsername"></span>
+    </div>
+    <div class="info-row">
+      <span class="label">Role :</span>
+      <span class="value" id="infoRole"></span>
+    </div>
+    <div class="info-row">
+      <span class="label">Email :</span>
+      <span class="value" id="infoEmail"></span>
+    </div>
+    <div class="info-row">
+      <span class="label">Contact :</span>
+      <span class="value" id="infoContact"></span>
+    </div>
+    <div class="info-row">
+      <span class="label">Address :</span>
+      <span class="value" id="infoAddress"></span>
+    </div>
+
+    <div class="buttons">
+      <button class="ok-btn" onclick="closeUserInfo()">OK</button>
+    </div>
+  </div>
+</div>
+
+
+  <!-- ADD MENU MODAL (admin) -->
+  <div id="addMenuModal" class="modal">
+    <div class="modal-content">
+      <h2 id="addMenuTitle">Add Menu Item</h2>
+      <input type="text" id="addItemName" placeholder="Enter item name">
+      <input type="number" id="addItemPrice" placeholder="Enter price">
+      <select id="addItemCategory">
+        <option value="">Select category</option>
+        <option value="donuts">donuts</option>
+        <option value="munchkins">munchkins</option>
+        <option value="bundles">bundles</option>
+        <option value="drinks">drinks</option>
+        <option value="combos">combos</option>
+      </select>
+      <input type="text" id="addItemImg" placeholder="Image URL (optional)">
+      <div class="buttons add-menu-buttons">
+        <button onclick="confirmAddOrEditMenuItem()">Save</button>
+        <button onclick="closeAddMenuModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REMOVE MENU MODAL (admin) -->
+  <div id="removeMenuModal" class="modal">
+    <div class="modal-content">
+      <h2>Remove Menu Item</h2>
+      <input type="text" id="removeItemName" placeholder="Enter exact item name to remove">
+      <div class="buttons remove-menu-buttons">
+        <button onclick="confirmRemoveMenuItem()">Remove</button>
+        <button onclick="closeRemoveMenuModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+      <p>© 2025 Donut Haven. All Rights Reserved.</p>
+    </footer>
+  </div>
+</section>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
