@@ -5,12 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Donut Haven 🍩</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
   <!-- SPLASH SCREEN -->
   <div id="splashScreen" class="splash-screen active">
     <div class="splash-content">
-      <img src="logo.png" alt="Donut Haven Logo" class="splash-logo">
+      <img src="nbglogo.png" alt="Donut Haven Logo" class="splash-logo">
+    </div>
+  </div>
+
+  <!-- CUSTOM CONFIRMATION MODAL -->
+  <div id="customConfirmModal" class="modal">
+    <div class="modal-content confirm-modal">
+      <div class="confirm-header">
+        <h3 id="confirmTitle">Confirmation</h3>
+      </div>
+      <div class="confirm-body">
+        <p id="confirmMessage">Are you sure you want to proceed?</p>
+      </div>
+      <div class="confirm-buttons">
+        <button id="confirmOk" class="confirm-btn confirm-primary">Confirm</button>
+        <button id="confirmCancel" class="confirm-btn confirm-secondary">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -28,8 +46,6 @@
       <li><a href="#" id="ordersLink">Orders</a></li>
       <li><a href="#" id="orderHistoryLink" style="display:none;">Order History</a></li>
       <li><a href="#" id="manageUsersLink" style="display:none;">Manage Users</a></li>
-      <li><a href="#" id="loginHistoryLink" style="display:none;">Login History</a></li>
-      <li><a href="#" id="tallyProductLink" style="display:none;">Tally Product</a></li>
     </ul>
 
     <ul class="nav-auth">
@@ -104,7 +120,7 @@
       <h2>Find Us</h2>
       <div class="map-wrapper">
         <iframe
-          src="https://www.google.com/maps?q=Manila+Philippines&output=embed"
+          src="https://www.google.com/maps?q=Orense,+Bauan,+Batangas&output=embed"
           width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
       </div>
     </div>
@@ -113,27 +129,23 @@
     <div id="contactSection" class="home-block contact-block glass-box">
       <h2>Contact Us</h2>
       <p>📞 <strong>0912-345-6789</strong></p>
-      <p>📧 <strong>donut.haven@example.com</strong></p>
+      <p>📧 <strong>donut.haven@gmail.com</strong></p>
       <div class="social-links small">
-        <a href="https://facebook.com" target="_blank" rel="noopener"><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"></a>
-        <a href="https://instagram.com" target="_blank" rel="noopener"><img src="https://cdn-icons-png.flaticon.com/512/733/733558.png" alt="Instagram"></a>
-        <a href="https://twitter.com" target="_blank" rel="noopener"><img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Twitter"></a>
-        <a href="https://tiktok.com" target="_blank" rel="noopener"><img src="https://cdn-icons-png.flaticon.com/512/3046/3046126.png" alt="TikTok"></a>
+        <a href="https://facebook.com" target="_blank" rel="noopener"><i class="fab fa-facebook"></i></a>
+        <a href="https://instagram.com" target="_blank" rel="noopener"><i class="fab fa-instagram"></i></a>
+        <a href="https://twitter.com" target="_blank" rel="noopener"><i class="fab fa-twitter"></i></a>
+        <a href="https://tiktok.com" target="_blank" rel="noopener"><i class="fab fa-tiktok"></i></a>
       </div>
     </div>
-
-    <footer>
-      <p></p>
-    </footer>
   </div>
 </section>
 
   <!-- MENU -->
   <section id="menuSection">
     <h2>Our Menu</h2>
-    <div id="adminControls" style="display:none; margin-bottom: 10px;">
-      <button onclick="openAddMenuModal()">➕ Add Menu</button>
-      <button onclick="openRemoveMenuModal()">❌ Remove Menu</button>
+    <div id="adminControls" style="display:none; margin-bottom: 20px; text-align: center;">
+      <button class="admin-btn primary-btn" onclick="openAddMenuModal()">➕ Add Menu</button>
+      <button class="admin-btn secondary-btn" onclick="openRemoveMenuModal()">❌ Remove Menu</button>
     </div>
     <div class="categories">
       <button onclick="showCategory('all')">All</button>
@@ -148,22 +160,28 @@
 
   <!-- CART -->
   <section id="cartSection">
-    <h2>Your Cart 🛒</h2>
-    <div id="cartItems"></div>
-    <div id="cartTotal"></div>
-    <button id="checkoutBtn" onclick="openPaymentModal()">Checkout</button>
+    <div class="cart-container">
+      <h2>Your Cart 🛒</h2>
+      <div id="cartItems" class="cart-content"></div>
+      <div id="cartTotal" class="cart-summary"></div>
+      <button id="checkoutBtn" onclick="openPaymentModal()">Checkout</button>
+    </div>
   </section>
 
   <!-- ORDERS -->
   <section id="ordersSection">
-    <h2>Your Orders</h2>
-    <div id="orderList"></div>
+    <div class="orders-container">
+      <h2>Your Orders</h2>
+      <div id="orderList" class="orders-content"></div>
+    </div>
   </section>
 
   <!-- ORDER HISTORY -->
   <section id="orderHistorySection">
-    <h2>Order History</h2>
-    <div id="historyList"></div>
+    <div class="history-container">
+      <h2>Order History</h2>
+      <div id="historyList" class="history-content"></div>
+    </div>
   </section>
 
   <!-- USER DASHBOARD SECTION -->
@@ -246,64 +264,94 @@
     </div>
   </section>
 
-  <!-- CHECKOUT CONFIRMATION -->
-  <section id="checkoutSection">
-    <div class="confirmation-box">
-      <div class="checkmark">✔</div>
-      <h2>Payment Successful!</h2>
-      <p>Thank you for your order 🍩</p>
-      <div id="summaryBox"></div>
-      <button onclick="backToMenu()">Back to Menu</button>
-    </div>
-  </section>
+  <!-- ADMIN DASHBOARD SECTION -->
+  <section id="adminDashboardSection">
+    <div class="dashboard-container">
+      <h2>Admin Dashboard</h2>
+      
+      <div class="dashboard-grid">
+        <!-- Manage Users Card -->
+        <div class="dashboard-card admin-card">
+          <h3>User Management</h3>
+          <div class="admin-card-content">
+            <p>View, add, edit, and remove users from the system.</p>
+            <div class="admin-stats">
+              <div class="admin-stat">
+                <span class="stat-value" id="totalUsersCount">0</span>
+                <span class="stat-label">Total Users</span>
+              </div>
+              <div class="admin-stat">
+                <span class="stat-value" id="adminUsersCount">0</span>
+                <span class="stat-label">Admins</span>
+              </div>
+              <div class="admin-stat">
+                <span class="stat-value" id="staffUsersCount">0</span>
+                <span class="stat-label">Staff</span>
+              </div>
+            </div>
+          </div>
+          <button class="admin-action-btn" onclick="showManageUsersDashboard()">Manage Users</button>
+        </div>
 
-  <!-- PAYMENT SUCCESS POPUP -->
-<div id="paymentPopup">
-  <div class="popup-box">
-    <div class="checkmark">✔</div>
-    <h2>Payment Successful!</h2>
-    <p>Thank you for your order 🍩</p>
-  </div>
-</div>
+        <!-- Login History Card -->
+        <div class="dashboard-card admin-card">
+          <h3>Login History</h3>
+          <div class="admin-card-content">
+            <p>Monitor detailed user login activity and access patterns.</p>
+            <div class="admin-stats">
+              <div class="admin-stat">
+                <span class="stat-value" id="totalLoginsCount">0</span>
+                <span class="stat-label">Total Logins</span>
+              </div>
+              <div class="admin-stat">
+                <span class="stat-value" id="todayLoginsCount">0</span>
+                <span class="stat-label">Today</span>
+              </div>
+              <div class="admin-stat">
+                <span class="stat-value" id="weekLoginsCount">0</span>
+                <span class="stat-label">This Week</span>
+              </div>
+            </div>
+          </div>
+          <button class="admin-action-btn" onclick="showLoginHistoryDashboard()">View Login History</button>
+        </div>
 
-<!-- RECEIPT -->
-<section id="receiptSection">
-  <div class="receipt-box">
-    <div class="receipt-content" id="receiptContent"></div>
-    <div class="receipt-buttons">
-      <button onclick="saveReceiptAsPDF()">💾 Save as PDF</button>
-      <button onclick="backToMenu()">⬅ Back to Menu</button>
-    </div>
-  </div>
-</section>
-
-<!-- LOGIN -->
-  <section id="loginSection">
-    <div class="login-box glass-box">
-      <h2>Login</h2>
-      <input type="email" id="email" placeholder="Email" />
-      <input type="password" id="password" placeholder="Password" />
-      <div class="login-buttons">
-        <button onclick="login()" class="primary-btn">Login</button>
+        <!-- Tally Product Card -->
+        <div class="dashboard-card admin-card">
+          <h3>Product Analytics</h3>
+          <div class="admin-card-content">
+            <p>Track product sales, performance, and customer reviews.</p>
+            <div class="admin-stats">
+              <div class="admin-stat">
+                <span class="stat-value" id="totalProductsCount">0</span>
+                <span class="stat-label">Products</span>
+              </div>
+              <div class="admin-stat">
+                <span class="stat-value" id="totalSalesCount">₱0</span>
+                <span class="stat-label">Total Sales</span>
+              </div>
+              <div class="admin-stat">
+                <span class="stat-value" id="totalOrdersCount">0</span>
+                <span class="stat-label">Orders</span>
+              </div>
+            </div>
+          </div>
+          <button class="admin-action-btn" onclick="showTallyProductDashboard()">View Analytics</button>
+        </div>
       </div>
-      <p>Or browse the menu as a guest.</p>
+      
+      <div class="dashboard-buttons">
+        <button onclick="backToMenu()" class="back-btn">Back to Menu</button>
+      </div>
     </div>
   </section>
 
-  <!-- LOGIN SUCCESS POPUP -->
-  <div id="loginSuccessPopup" class="popup-box" style="display:none;">
-    <div class="popup-content glass-box">
-      <div class="checkmark">✔</div>
-      <h3>Successfully Logged In!</h3>
-    </div>
-  </div>
-
-  <!-- MANAGE USERS MODAL -->
-  <div id="manageUsersModal" class="modal">
-    <div class="modal-content manage-users-modal">
-      <div class="manage-users-header">
+  <!-- MANAGE USERS DASHBOARD SECTION -->
+  <section id="manageUsersDashboardSection">
+    <div class="dashboard-container">
+      <div class="dashboard-header">
+        <button class="back-btn-small" onclick="showAdminDashboard()">←</button>
         <h2>Manage Users</h2>
-        <button class="close-btn" onclick="closeManageUsers()">×</button>
       </div>
 
       <div class="user-management-container">
@@ -342,8 +390,8 @@
         <!-- User Details Section -->
         <div class="user-details-section" id="userDetailsSection" style="display: none;">
           <div class="details-header">
+            <button class="back-btn-small" onclick="hideUserDetails()">←</button>
             <h3>User Details</h3>
-            <button class="back-btn" onclick="hideUserDetails()">← Back</button>
           </div>
           <div class="user-details" id="userDetails">
             <!-- User details will be populated here -->
@@ -353,8 +401,8 @@
         <!-- Add User Form -->
         <div class="add-user-section" id="addUserSection" style="display: none;">
           <div class="add-user-header">
+            <button class="back-btn-small" onclick="toggleAddUserForm()">←</button>
             <h3>Add New User</h3>
-            <button class="close-add-user-btn" onclick="toggleAddUserForm()">×</button>
           </div>
           <div class="add-user-form">
             <input type="text" id="newUserName" placeholder="Username" required>
@@ -375,14 +423,14 @@
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- LOGIN HISTORY MODAL -->
-  <div id="loginHistoryModal" class="modal">
-    <div class="modal-content login-history-modal">
-      <div class="login-history-header">
+  <!-- LOGIN HISTORY DASHBOARD SECTION -->
+  <section id="loginHistoryDashboardSection">
+    <div class="dashboard-container">
+      <div class="dashboard-header">
+        <button class="back-btn-small" onclick="showAdminDashboard()">←</button>
         <h2>Login History</h2>
-        <button class="close-btn" onclick="closeLoginHistoryModal()">×</button>
       </div>
       
       <div class="login-history-container">
@@ -418,14 +466,14 @@
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- TALLY PRODUCT MODAL -->
-  <div id="tallyProductModal" class="modal">
-    <div class="modal-content tally-product-modal">
-      <div class="tally-product-header">
+  <!-- TALLY PRODUCT DASHBOARD SECTION -->
+  <section id="tallyProductDashboardSection">
+    <div class="dashboard-container">
+      <div class="dashboard-header">
+        <button class="back-btn-small" onclick="showAdminDashboard()">←</button>
         <h2>Product Sales Tally</h2>
-        <button class="close-btn" onclick="closeTallyProductModal()">×</button>
       </div>
       
       <div class="tally-product-container">
@@ -462,7 +510,7 @@
           </div>
         </div>
         
-        <div class="chart-container">
+        <div class="chart-container-wrapper">
           <canvas id="tallyChart"></canvas>
         </div>
         
@@ -480,9 +528,89 @@
               <h3>Best Seller</h3>
               <p id="bestSeller">-</p>
             </div>
+            <div class="stat-card">
+              <h3>Total Users</h3>
+              <p id="totalUsers">0</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Reviews Analytics Section -->
+        <div class="reviews-analytics">
+          <h3>Reviews Analytics</h3>
+          <div class="reviews-stats">
+            <div class="stat-card">
+              <h3>Total Reviews</h3>
+              <p id="totalReviews">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Average Rating</h3>
+              <p id="averageRating">0</p>
+            </div>
+          </div>
+          <div class="rating-breakdown">
+            <h4>Rating Breakdown</h4>
+            <div id="ratingBreakdown">
+              <!-- This will be filled by JavaScript -->
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- CHECKOUT CONFIRMATION -->
+  <section id="checkoutSection">
+    <div class="confirmation-box">
+      <div class="checkmark">✔</div>
+      <h2>Payment Successful!</h2>
+      <p>Thank you for your order 🍩</p>
+      <div id="summaryBox"></div>
+      <button onclick="backToMenu()">Back to Menu</button>
+    </div>
+  </section>
+
+  <!-- PAYMENT SUCCESS POPUP -->
+<div id="paymentPopup">
+  <div class="popup-box">
+    <div class="checkmark">✔</div>
+    <h2>Payment Successful!</h2>
+    <p>Thank you for your order 🍩</p>
+  </div>
+</div>
+
+<!-- RECEIPT -->
+<section id="receiptSection">
+  <div class="receipt-header">
+    <button class="back-btn-small" onclick="backToMenu()">←</button>
+    <h2>Order Receipt</h2>
+  </div>
+  <div class="receipt-box" id="receiptBox">
+    <div class="receipt-content" id="receiptContent"></div>
+    <div class="receipt-buttons">
+      <button onclick="saveReceiptAsImage()">💾 Save as Image</button>
+    </div>
+  </div>
+</section>
+
+<!-- LOGIN -->
+  <section id="loginSection">
+    <div class="login-box glass-box">
+      <h2>Login</h2>
+      <input type="email" id="email" placeholder="Email" />
+      <input type="password" id="password" placeholder="Password" />
+      <div class="login-buttons">
+        <button onclick="login()" class="primary-btn">Login</button>
+      </div>
+      <p>Or browse the menu as a guest.</p>
+    </div>
+  </section>
+
+  <!-- LOGIN SUCCESS POPUP -->
+  <div id="loginSuccessPopup" class="popup-box" style="display:none;">
+    <div class="popup-content glass-box">
+      <div class="checkmark">✔</div>
+      <h3>Successfully Logged In!</h3>
     </div>
   </div>
 
@@ -618,11 +746,182 @@
     </div>
   </div>
 
-  <footer>
-      <p>© 2025 Donut Haven. All Rights Reserved.</p>
-    </footer>
+  <!-- CUSTOM POPUP NOTIFICATION -->
+  <div id="customPopup" class="popup-notification">
+    <div class="popup-content">
+      <div class="popup-icon">ℹ️</div>
+      <div class="popup-message" id="popupMessage"></div>
+    </div>
   </div>
-</section>
+
+  <!-- PROFESSIONAL FOOTER -->
+  <footer class="main-footer">
+    <div class="footer-container">
+      <div class="footer-grid">
+        <div class="footer-section">
+          <h3 class="footer-logo">🍩 Donut Haven</h3>
+          <p class="footer-description">Bringing sweetness to every bite since 2025. Fresh donuts made daily with love and premium ingredients.</p>
+          <div class="footer-social">
+            <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook">
+              <i class="fab fa-facebook"></i>
+            </a>
+            <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">
+              <i class="fab fa-instagram"></i>
+            </a>
+            <a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter">
+              <i class="fab fa-twitter"></i>
+            </a>
+            <a href="https://tiktok.com" target="_blank" rel="noopener" aria-label="TikTok">
+              <i class="fab fa-tiktok"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="footer-section">
+          <h4>Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="#" onclick="showSection('homeSection')">Home</a></li>
+            <li><a href="#" onclick="showMenu()">Menu</a></li>
+            <li><a href="#" onclick="showCart()">Cart</a></li>
+            <li><a href="#" onclick="showOrders()">Orders</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h4>Contact Info</h4>
+          <ul class="footer-contact">
+            <li><i class="fas fa-map-marker-alt"></i> Orense, Bauan, Batangas</li>
+            <li><i class="fas fa-phone"></i> 0912-345-6789</li>
+            <li><i class="fas fa-envelope"></i> donut.haven@gmail.com</li>
+            <li><i class="fas fa-clock"></i> Open Daily: 7AM - 9PM</li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h4>Newsletter</h4>
+          <p class="newsletter-text">Subscribe to get updates on new flavors and special promotions!</p>
+          <div class="newsletter-form">
+            <input type="email" id="newsletterEmail" placeholder="Your email address">
+            <button onclick="subscribeNewsletter()" class="newsletter-btn">Subscribe</button>
+          </div>
+          <p id="newsletterMessage" class="newsletter-message"></p>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <div class="payment-methods">
+          <span>We Accept:</span>
+          <div class="payment-icons">
+            <i class="fas fa-money-bill-wave" title="Cash"></i>
+            <i class="fas fa-credit-card" title="Credit Card"></i>
+            <i class="fas fa-mobile-alt" title="GCash"></i>
+          </div>
+        </div>
+        <div class="copyright">
+          <p>© 2025 Donut Haven. All Rights Reserved. | <a href="#" onclick="openPrivacyModal()">Privacy Policy</a> | <a href="#" onclick="openTermsModal()">Terms & Conditions</a></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- PRIVACY POLICY MODAL -->
+  <div id="privacyModal" class="modal">
+    <div class="modal-content privacy-modal">
+      <h2>Privacy Policy</h2>
+      <div class="privacy-content">
+        <p><strong>Last Updated: December 2025</strong></p>
+        <p>At Donut Haven, we value your privacy and are committed to protecting your personal information.</p>
+        
+        <h3>Information We Collect</h3>
+        <p>We collect information you provide directly to us when you:</p>
+        <ul>
+          <li>Create an account</li>
+          <li>Place an order</li>
+          <li>Sign up for our newsletter</li>
+          <li>Contact our customer service</li>
+        </ul>
+        
+        <h3>How We Use Your Information</h3>
+        <p>Your information is used to:</p>
+        <ul>
+          <li>Process and fulfill your orders</li>
+          <li>Communicate with you about orders and promotions</li>
+          <li>Improve our products and services</li>
+          <li>Ensure website security</li>
+        </ul>
+        
+        <h3>Data Security</h3>
+        <p>We implement appropriate security measures to protect your personal information from unauthorized access, alteration, or disclosure.</p>
+
+        <h3>Third-Party Services</h3>
+        <p>We may use third-party services for payment processing and analytics. These services have their own privacy policies governing the use of your information.</p>
+
+        <h3>Your Rights</h3>
+        <p>You have the right to:</p>
+        <ul>
+          <li>Access your personal information</li>
+          <li>Correct inaccurate data</li>
+          <li>Request deletion of your data</li>
+          <li>Opt-out of marketing communications</li>
+        </ul>
+
+        <h3>Changes to This Policy</h3>
+        <p>We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page.</p>
+
+        <h3>Contact Us</h3>
+        <p>If you have any questions about this Privacy Policy, please contact us at donut.haven@gmail.com.</p>
+   
+      </div>
+      <button onclick="closePrivacyModal()" class="close-modal-btn">Close</button>
+    </div>
+  </div>
+
+  <!-- TERMS & CONDITIONS MODAL -->
+  <div id="termsModal" class="modal">
+    <div class="modal-content terms-modal">
+      <h2>Terms & Conditions</h2>
+      <div class="terms-content">
+        <p><strong>Effective Date: December 2025</strong></p>
+        
+        <h3>Ordering & Delivery</h3>
+        <ul>
+          <li>All orders are subject to product availability</li>
+          <li>Delivery times are estimates and may vary</li>
+          <li>We require valid contact information for all deliveries</li>
+          <li>Delivery fee of ₱50 applies to all orders</li>
+        </ul>
+        
+        <h3>Payment</h3>
+        <ul>
+          <li>We accept Cash on Delivery, GCash, and Credit Cards</li>
+          <li>All prices are in Philippine Peso (₱)</li>
+          <li>Prices are subject to change without notice</li>
+        </ul>
+        
+        <h3>Website Use</h3>
+        <ul>
+          <li>You must be at least 13 years old to use our website</li>
+          <li>Account sharing is prohibited</li>
+          <li>You are responsible for maintaining the confidentiality of your account</li>
+          <li>We reserve the right to terminate accounts for violations of these terms</li>
+        </ul>
+
+        <h3>Intellectual Property</h3>
+        <p>All content on this website, including text, graphics, logos, and images, is the property of Donut Haven and is protected by copyright laws.</p>
+
+        <h3>Limitation of Liability</h3>
+        <p>Donut Haven shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the service.</p>
+
+        <h3>Governing Law</h3>
+        <p>These Terms shall be governed by and construed in accordance with the laws.</p>
+
+        <h3>Contact Information</h3>
+        <p>For any questions regarding these Terms and Conditions, please contact us at donut.haven@gmail.com or call 0912-345-6789.</p>
+
+      </div>
+      <button onclick="closeTermsModal()" class="close-modal-btn">Close</button>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>

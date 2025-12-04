@@ -1,3 +1,48 @@
+// ========== CUSTOM CONFIRMATION MODAL FUNCTION ==========
+function showCustomConfirm(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customConfirmModal');
+    const messageEl = document.getElementById('confirmMessage');
+    const okBtn = document.getElementById('confirmOk');
+    const cancelBtn = document.getElementById('confirmCancel');
+    
+    // Set message
+    messageEl.textContent = message;
+    
+    // Show modal
+    modal.classList.add('active');
+    
+    // Remove previous event listeners
+    const newOkBtn = okBtn.cloneNode(true);
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    
+    okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+    
+    // Add new event listeners
+    newOkBtn.addEventListener('click', () => {
+      modal.classList.remove('active');
+      resolve(true);
+    });
+    
+    newCancelBtn.addEventListener('click', () => {
+      modal.classList.remove('active');
+      resolve(false);
+    });
+    
+    // Close on outside click
+    const handleOutsideClick = (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('active');
+        resolve(false);
+        modal.removeEventListener('click', handleOutsideClick);
+      }
+    };
+    
+    modal.addEventListener('click', handleOutsideClick);
+  });
+}
+
 // ========== SPLASH SCREEN FUNCTIONALITY ==========
 function initializeSplashScreen() {
   const splashScreen = document.getElementById('splashScreen');
@@ -27,6 +72,9 @@ function initializeApp() {
     currentUser = "guest";
   }
 
+  // Load the appropriate cart for the current user
+  loadCart();
+
   updateNavbar();
   showMenu();            // start on Menu so user sees items
   renderReviewCards();
@@ -36,22 +84,42 @@ function initializeApp() {
   setupNavLinkHandlers();
 }
 
+// ========== CUSTOM POPUP NOTIFICATION FUNCTION ==========
+function showPopup(message, duration = 3000) {
+  const popup = document.getElementById('customPopup');
+  const messageEl = document.getElementById('popupMessage');
+  
+  // Set message
+  messageEl.textContent = message;
+  
+  // Show popup
+  popup.classList.remove('fade-out');
+  popup.classList.add('active');
+  
+  // Auto hide after duration
+  setTimeout(() => {
+    popup.classList.add('fade-out');
+    setTimeout(() => {
+      popup.classList.remove('active');
+    }, 300);
+  }, duration);
+}
+
 // ---------- State ----------
 let currentUser = "guest";
 let currentUsername = "";
-let cart = JSON.parse(localStorage.getItem("dh_cart")) || [];
+let cart = []; // Initialize empty, will be set based on user
 let orders = JSON.parse(localStorage.getItem("dh_orders")) || [];
 let orderHistory = JSON.parse(localStorage.getItem("dh_orderHistory")) || [];
 let hiddenHistory = JSON.parse(localStorage.getItem("dh_hiddenHistory")) || {}; // map username => array of hidden order IDs
+let previousSection = "menuSection"; // Track previous section for back navigation
 
 // load saved users from localStorage (if any), otherwise default accounts
 let users = JSON.parse(localStorage.getItem("dh_users")) || [
   { username: "admin", password: "admin123", role: "admin", contact: "", address: "", email: "admin@donuthaven.com" },
   { username: "staff", password: "staff123", role: "staff", contact: "", address: "", email: "staff@donuthaven.com" },
-  { username: "user", password: "user123", role: "customer", contact: "", address: "", email: "user@example.com" },
+  { username: "user", password: "user123", role: "customer", contact: "", address: "", email: "user@gmail.com" },
 ];
-
-
 
 // load saved reviews (store under "dh_reviews")
 let reviews = JSON.parse(localStorage.getItem("dh_reviews")) || [
@@ -86,15 +154,15 @@ let menu = [
   { name: 'Bavarian', price: 15, category: 'munchkins', img: 'bavarian.jpg' },
   { name: 'Boston Creme', price: 15, category: 'munchkins', img: 'boston.jpg' },
   { name: 'Strawberry filled', price: 15, category: 'munchkins', img: 'strawberry filled.jpg' },
-  { name: 'Smidgets Dutch Choco Crunch', price: 15, category: 'munchkins', img: 'smidgets.png' },
-  { name: 'Smidgets Choco Crinkles', price: 15, category: 'munchkins', img: 'crinkles.png' },
-  { name: 'Smidgets Choco Peanut', price: 15, category: 'munchkins', img: 'Peanut.png' },
+  { name: 'Dutch Choco', price: 15, category: 'munchkins', img: 'smidgets.png' },
+  { name: 'Choco Crinkles', price: 15, category: 'munchkins', img: 'crinkles.png' },
+  { name: 'Choco Peanut', price: 15, category: 'munchkins', img: 'Peanut.png' },
   { name: 'Butternut Funbites', price: 15, category: 'munchkins', img: 'funbites.png' },
   { name: 'Famous 9', price: 300, category: 'bundles', img: 'famous9.png' },
   { name: 'Famous 12', price: 380, category: 'bundles', img: 'famous12.png' },
   { name: 'Famous Plus', price: 400, category: 'bundles', img: 'famous plus.png' },
   { name: 'Family Bundle', price: 500, category: 'bundles', img: 'family bundle.png' },
-  { name: 'Ultimate Barkada Bundle', price: 559, category: 'bundles', img: 'barkada bundle.png' },
+  { name: 'Barkada Bundle', price: 559, category: 'bundles', img: 'barkada bundle.png' },
   { name: 'Brewed Coffee', price: 75, category: 'drinks', img: 'brewed coffee.jpg' },
   { name: 'Hot Chocolate', price: 60, category: 'drinks', img: 'hot chocolate.jpg' },
   { name: 'Choco Java', price: 85, category: 'drinks', img: 'choco java.jpg' },
@@ -116,6 +184,31 @@ let menu = [
   { name: 'Combo 9', price: 130, category: 'combos', img: 'combo9.jpg' },
   { name: 'Combo 10', price: 129, category: 'combos', img: 'combo10.jpg' },
 ];
+
+// ========== CART MANAGEMENT FUNCTIONS ==========
+function getCartKey() {
+  if (currentUser === "guest") {
+    return "dh_cart_guest";
+  } else {
+    return `dh_cart_${currentUsername}`;
+  }
+}
+
+function loadCart() {
+  const cartKey = getCartKey();
+  cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+}
+
+function saveCart() {
+  const cartKey = getCartKey();
+  localStorage.setItem(cartKey, JSON.stringify(cart));
+}
+
+function clearCurrentCart() {
+  const cartKey = getCartKey();
+  localStorage.removeItem(cartKey);
+  cart = [];
+}
 
 // ---------- NAV (hamburger + link handlers) ----------
 const navLinksEl = document.getElementById("navLinks");
@@ -141,6 +234,7 @@ function setupNavLinkHandlers() {
 // Update your existing nav link handlers to also close the menu on mobile
 document.getElementById("homeLink").onclick = (e) => {
   e.preventDefault();
+  previousSection = "homeSection";
   showSection("homeSection");
   window.scrollTo({ top: 0, behavior: "smooth" });
   if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
@@ -148,30 +242,35 @@ document.getElementById("homeLink").onclick = (e) => {
 
 document.getElementById("menuLink").onclick = (e) => {
   e.preventDefault();
+  previousSection = "menuSection";
   showMenu();
   if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
 };
 
 document.getElementById("cartLink").onclick = (e) => {
   e.preventDefault();
+  previousSection = "cartSection";
   showCart();
   if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
 };
 
 document.getElementById("ordersLink").onclick = (e) => {
   e.preventDefault();
+  previousSection = "ordersSection";
   showOrders();
   if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
 };
 
 document.getElementById("orderHistoryLink").onclick = (e) => {
   e.preventDefault();
+  previousSection = "orderHistorySection";
   showHistory();
   if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
 };
 
 document.getElementById("loginLink").onclick = (e) => {
   e.preventDefault();
+  previousSection = "loginSection";
   showSection("loginSection");
   if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
 };
@@ -182,27 +281,17 @@ document.getElementById("logoutLink").onclick = (e) => {
   if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
 };
 
+// Updated handlers for admin dashboard navigation
 document.getElementById("manageUsersLink").onclick = (e) => {
   e.preventDefault();
-  openManageUsers();
-  if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
-};
-
-// NEW: Add handlers for the new navigation items
-document.getElementById("loginHistoryLink").onclick = (e) => {
-  e.preventDefault();
-  openLoginHistoryModal();
-  if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
-};
-
-document.getElementById("tallyProductLink").onclick = (e) => {
-  e.preventDefault();
-  openTallyProductModal();
+  previousSection = "adminDashboardSection";
+  showAdminDashboard();
   if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
 };
 
 document.getElementById("signupLink").onclick = (e) => {
   e.preventDefault();
+  previousSection = "signupModal";
   openSignup();
   if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
 };
@@ -210,6 +299,7 @@ document.getElementById("signupLink").onclick = (e) => {
 // ME dropdown links
 document.getElementById("viewInfoBtn").onclick = (e) => {
   e.preventDefault();
+  previousSection = "userDashboardSection";
   showDashboard();
   if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
 };
@@ -227,6 +317,15 @@ function showSection(id) {
   if (window.innerWidth <= 820) navLinksEl.classList.remove("active");
   // scroll to top of section
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Back to previous section function
+function backToPreviousSection() {
+  if (previousSection) {
+    showSection(previousSection);
+  } else {
+    backToMenu();
+  }
 }
 
 // helper to scroll inside the active home section to a sub-block
@@ -255,11 +354,10 @@ function updateNavbar() {
 
   // admin controls & manage users link
   document.getElementById("adminControls").style.display = currentUser === "admin" ? "block" : "none";
-  document.getElementById("manageUsersLink").style.display = currentUser === "admin" ? "block" : "none";
-
-  // NEW: Show login history and tally product links for admin
-  document.getElementById("loginHistoryLink").style.display = currentUser === "admin" ? "block" : "none";
-  document.getElementById("tallyProductLink").style.display = currentUser === "admin" ? "block" : "none";
+  
+  // Show admin dashboard links for admin users
+  const isAdmin = currentUser === "admin";
+  document.getElementById("manageUsersLink").style.display = isAdmin ? "block" : "none";
 
   // visibility for menu/cart depending on role
   if (currentUser === "staff") {
@@ -331,23 +429,27 @@ function renderReviewCards() {
 }
 
 // ======== SUBMIT REVIEW ========
-function submitReview() {
+async function submitReview() {
   const loggedInUsername = localStorage.getItem("currentUsername") || currentUsername;
   
   if (currentUser === "guest" || !loggedInUsername) {
-    alert("You must be logged in to submit a review.");
+    showPopup("You must be logged in to submit a review.");
     return;
   }
   
   const stars = Number(document.getElementById("reviewStars").value);
   const text = document.getElementById("reviewText").value.trim();
-  if (!text) return alert("Please write a review.");
+  if (!text) {
+    showPopup("Please write a review.");
+    return;
+  }
 
   reviews = JSON.parse(localStorage.getItem("dh_reviews")) || reviews;
   const existingIndex = reviews.findIndex(r => r.name === loggedInUsername);
   
   if (existingIndex !== -1) {
-    if (!confirm("You already have a review. Replace it?")) return;
+    const confirmed = await showCustomConfirm("You already have a review. Replace it?");
+    if (!confirmed) return;
     reviews[existingIndex].stars = stars;
     reviews[existingIndex].text = text;
   } else {
@@ -357,38 +459,39 @@ function submitReview() {
   localStorage.setItem("dh_reviews", JSON.stringify(reviews));
   renderReviewCards();
   clearReviewForm();
-  alert("Thanks — your review was added!");
+  showPopup("Thanks — your review was added!");
 }
 
 // ======== DELETE REVIEW ========
-function deleteReview(index) {
+async function deleteReview(index) {
   reviews = JSON.parse(localStorage.getItem("dh_reviews")) || reviews;
   
   // Get the actual current logged-in username
   const loggedInUsername = localStorage.getItem("currentUsername") || currentUsername;
   
   if (!reviews[index]) {
-    alert("Review not found.");
+    showPopup("Review not found.");
     return;
   }
   
   // Triple security check
   if (!loggedInUsername) {
-    alert("You must be logged in to delete a review.");
+    showPopup("You must be logged in to delete a review.");
     return;
   }
   
   if (reviews[index].name !== loggedInUsername) {
-    alert("You can only delete your own reviews.");
+    showPopup("You can only delete your own reviews.");
     return;
   }
   
-  if (!confirm("Are you sure you want to delete your review?")) return;
+  const confirmed = await showCustomConfirm("Are you sure you want to delete your review?");
+  if (!confirmed) return;
   
   reviews.splice(index, 1);
   localStorage.setItem("dh_reviews", JSON.stringify(reviews));
   renderReviewCards();
-  alert("Your review has been deleted.");
+  showPopup("Your review has been deleted.");
 }
 
 // ======== CLEAR FORM ========
@@ -408,14 +511,53 @@ function login() {
   const found = users.find(u => u.email === email && u.password === pass);
   
   if (!found) {
-    alert("Invalid credentials! Browsing as guest.");
+    showPopup("Invalid credentials! Browsing as guest.");
     currentUser = "guest";
     currentUsername = "";
     localStorage.removeItem("currentUsername");
+    loadCart(); // Load guest cart
   } else {
+    const previousUser = currentUser;
+    const previousUsername = currentUsername;
+    
     currentUser = found.role === "customer" ? "customer" : found.role;
     currentUsername = found.username;
     localStorage.setItem("currentUsername", currentUsername);
+    
+    // Transfer cart from guest to user if logging in from guest
+    if (previousUser === "guest" && previousUsername === "") {
+      const guestCartKey = "dh_cart_guest";
+      const userCartKey = `dh_cart_${currentUsername}`;
+      const guestCart = JSON.parse(localStorage.getItem(guestCartKey)) || [];
+      
+      if (guestCart.length > 0) {
+        // Merge carts: combine quantities for same items
+        const userCart = JSON.parse(localStorage.getItem(userCartKey)) || [];
+        const mergedCart = [...userCart];
+        
+        guestCart.forEach(guestItem => {
+          const existingItem = mergedCart.find(item => item.name === guestItem.name);
+          if (existingItem) {
+            existingItem.qty += guestItem.qty;
+          } else {
+            mergedCart.push({ ...guestItem });
+          }
+        });
+        
+        cart = mergedCart;
+        saveCart();
+        // Clear guest cart
+        localStorage.removeItem(guestCartKey);
+        
+        showPopup(`Welcome back ${currentUsername}! Your guest cart items have been transferred to your account.`);
+      } else {
+        loadCart(); // Load user's existing cart
+        showPopup(`Welcome back ${currentUsername}!`);
+      }
+    } else {
+      loadCart(); // Load user's cart
+      showPopup(`Welcome back ${currentUsername}!`);
+    }
     
     // Record login history
     const loginRecord = {
@@ -428,23 +570,27 @@ function login() {
     
     loginHistory.unshift(loginRecord);
     localStorage.setItem("dh_loginHistory", JSON.stringify(loginHistory));
-    
-    alert(`You have been successfully logged in as ${currentUsername} (${found.role})`);
   }
 
   updateNavbar();
-  renderReviewCards(); // Refresh reviews to update delete buttons
+  renderReviewCards();
   showMenu();
 }
 
 // logout
 function logout() {
+  const previousUsername = currentUsername;
+  
   currentUser = "guest";
   currentUsername = "";
   localStorage.removeItem("currentUsername");
+  
+  // Switch to guest cart
+  loadCart();
+  
   updateNavbar();
-  renderReviewCards(); // Refresh reviews to remove delete buttons
-  alert("You are now browsing as guest.");
+  renderReviewCards();
+  showPopup("You are now browsing as guest.");
   showMenu();
 }
 
@@ -500,7 +646,7 @@ function updateUserInfo() {
   
   // Basic validation
   if (email && !isValidEmail(email)) {
-    alert("Please enter a valid email address.");
+    showPopup("Please enter a valid email address.");
     return;
   }
   
@@ -522,7 +668,7 @@ function updateUserInfo() {
     });
     document.getElementById("updateInfoBtn").disabled = true;
     
-    alert("Information updated successfully!");
+    showPopup("Information updated successfully!");
   }
 }
 
@@ -537,28 +683,28 @@ function changePassword() {
   const confirmPassword = document.getElementById("confirmPassword").value;
   
   if (!currentPassword || !newPassword || !confirmPassword) {
-    alert("Please fill in all password fields.");
+    showPopup("Please fill in all password fields.");
     return;
   }
   
   if (newPassword !== confirmPassword) {
-    alert("New passwords do not match.");
+    showPopup("New passwords do not match.");
     return;
   }
   
   if (newPassword.length < 6) {
-    alert("New password must be at least 6 characters long.");
+    showPopup("New password must be at least 6 characters long.");
     return;
   }
   
   const userIndex = users.findIndex(u => u.username === currentUsername);
   if (userIndex === -1) {
-    alert("User not found.");
+    showPopup("User not found.");
     return;
   }
   
   if (users[userIndex].password !== currentPassword) {
-    alert("Current password is incorrect.");
+    showPopup("Current password is incorrect.");
     return;
   }
   
@@ -571,7 +717,7 @@ function changePassword() {
   document.getElementById("newPassword").value = "";
   document.getElementById("confirmPassword").value = "";
   
-  alert("Password changed successfully!");
+  showPopup("Password changed successfully!");
 }
 
 // Spending chart
@@ -724,10 +870,10 @@ function isValidEmail(email) {
 
 // show user info via alert (simple)
 function showUserInfo() {
-  if (!currentUsername) return alert("No user info available.");
+  if (!currentUsername) return showPopup("No user info available.");
   users = JSON.parse(localStorage.getItem("dh_users")) || users;
   const u = users.find(x => x.username === currentUsername);
-  if (!u) return alert("User not found.");
+  if (!u) return showPopup("User not found.");
 
   // Fill modal fields
   document.getElementById("infoUsername").textContent = u.username;
@@ -760,16 +906,25 @@ function signup() {
   const contact = document.getElementById("signupContact").value.trim();
   const address = document.getElementById("signupAddress").value.trim();
 
-  if (!username || !password || !email) return alert("Username, email and password are required.");
+  if (!username || !password || !email) {
+    showPopup("Username, email and password are required.");
+    return;
+  }
   
   if (!isValidEmail(email)) {
-    alert("Please enter a valid email address.");
+    showPopup("Please enter a valid email address.");
     return;
   }
 
   users = JSON.parse(localStorage.getItem("dh_users")) || users;
-  if (users.find(u => u.username === username)) return alert("Username already exists.");
-  if (users.find(u => u.email === email)) return alert("Email already exists.");
+  if (users.find(u => u.username === username)) {
+    showPopup("Username already exists.");
+    return;
+  }
+  if (users.find(u => u.email === email)) {
+    showPopup("Email already exists.");
+    return;
+  }
 
   const newUser = { username, email, password, role: "customer", contact, address };
   users.push(newUser);
@@ -783,7 +938,7 @@ function signup() {
   document.getElementById("signupContact").value = "";
   document.getElementById("signupAddress").value = "";
 
-  alert("Sign up successful! The new user has been added.");
+  showPopup("Sign up successful! The new user has been added.");
   closeSignup();
 
   // keep manage users closed by default; admin can open it when needed
@@ -846,7 +1001,7 @@ function openEditMenuModal(itemName) {
   // find item and prefill
   const it = menu.find(m => m.name === itemName);
   if (!it) {
-    alert("Item not found");
+    showPopup("Item not found");
     return;
   }
   menuEditOriginalName = it.name;
@@ -862,22 +1017,25 @@ function confirmAddOrEditMenuItem() {
   const price = Number(document.getElementById("addItemPrice").value);
   const category = document.getElementById("addItemCategory").value;
   const img = document.getElementById("addItemImg").value || 'https://via.placeholder.com/150';
-  if (!name || !price || !category) return alert("All fields required!");
+  if (!name || !price || !category) {
+    showPopup("All fields required!");
+    return;
+  }
 
   if (menuEditOriginalName) {
     // edit mode
     const idx = menu.findIndex(m => m.name === menuEditOriginalName);
     if (idx !== -1) {
       menu[idx] = { name, price, category, img };
-      alert("Menu item updated!");
+      showPopup("Menu item updated!");
     } else {
-      alert("Original item not found, adding new item instead.");
+      showPopup("Original item not found, adding new item instead.");
       menu.push({ name, price, category, img });
     }
   } else {
     // add mode
     menu.push({ name, price, category, img });
-    alert("Menu item added!");
+    showPopup("Menu item added!");
   }
   closeAddMenuModal();
   showMenu();
@@ -890,14 +1048,23 @@ function openRemoveMenuModal() {
 function closeRemoveMenuModal() {
   document.getElementById("removeMenuModal").style.display = "none";
 }
-function confirmRemoveMenuItem() {
+async function confirmRemoveMenuItem() {
   const name = document.getElementById("removeItemName").value.trim();
-  if (!name) return alert("Enter the item name to remove.");
+  if (!name) {
+    showPopup("Enter the item name to remove.");
+    return;
+  }
   const idx = menu.findIndex(i => i.name.toLowerCase() === name.toLowerCase());
-  if (idx === -1) return alert("Item not found!");
-  if (!confirm(`Remove ${menu[idx].name}?`)) return;
+  if (idx === -1) {
+    showPopup("Item not found!");
+    return;
+  }
+  
+  const confirmed = await showCustomConfirm(`Remove ${menu[idx].name}?`);
+  if (!confirmed) return;
+  
   menu.splice(idx, 1);
-  alert("Menu item removed!");
+  showPopup("Menu item removed!");
   closeRemoveMenuModal();
   showMenu();
 }
@@ -905,7 +1072,7 @@ function confirmRemoveMenuItem() {
 // ---------- CART ----------
 function addToCart(itemName) {
   if (currentUser !== "customer") {
-    alert("Only logged-in customers can order!");
+    showPopup("Only logged-in customers can order!");
     return;
   }
 
@@ -916,9 +1083,9 @@ function addToCart(itemName) {
     const item = menu.find(m => m.name === itemName);
     cart.push({ ...item, qty: 1 });
   }
-  // Save cart to localStorage
-  localStorage.setItem("dh_cart", JSON.stringify(cart));
-  alert(`${itemName} added to cart!`);
+  
+  saveCart(); // Use the new save function
+  showPopup(`${itemName} added to cart!`);
 }
 
 function showCart() {
@@ -926,9 +1093,10 @@ function showCart() {
   const container = document.getElementById("cartItems");
   const totalContainer = document.getElementById("cartTotal");
   container.innerHTML = "";
-
+  
+  // Ensure we're showing the current user's cart
   if (cart.length === 0) {
-    container.innerHTML = "<p>Your cart is empty.</p>";
+    container.innerHTML = "<p class='empty-message'>Your cart is empty. Add some delicious donuts! 🍩</p>";
     totalContainer.innerHTML = "";
     return;
   }
@@ -961,13 +1129,13 @@ function showCart() {
   `;
 }
 
+
 function changeQty(index, delta) {
   cart[index].qty += delta;
   if (cart[index].qty <= 0) {
     cart.splice(index, 1);
   }
-  // Save cart to localStorage
-  localStorage.setItem("dh_cart", JSON.stringify(cart));
+  saveCart(); // Use the new save function
   showCart();
 }
 
@@ -976,7 +1144,10 @@ let selectedPayment = "";
 let gcashFormVisible = false;
 
 function openPaymentModal() {
-  if (cart.length === 0) return alert("Your cart is empty!");
+  if (cart.length === 0) {
+    showPopup("Your cart is empty!");
+    return;
+  }
   
   // Close mobile navigation if open
   if (window.innerWidth <= 820 && navLinksEl) {
@@ -1048,19 +1219,19 @@ function cancelGCash() {
   resetPaymentForm();
 }
 
-function confirmGCashPayment() {
+async function confirmGCashPayment() {
   const gcashUserNumber = document.getElementById('gcashUserNumber').value.trim();
   const gcashReference = document.getElementById('gcashReference').value.trim();
   
   // Validation
   if (!gcashUserNumber) {
-    alert("Please enter your GCash number.");
+    showPopup("Please enter your GCash number.");
     document.getElementById('gcashUserNumber').focus();
     return;
   }
   
   if (!gcashReference) {
-    alert("Please enter the reference number.");
+    showPopup("Please enter the reference number.");
     document.getElementById('gcashReference').focus();
     return;
   }
@@ -1068,14 +1239,13 @@ function confirmGCashPayment() {
   // Basic GCash number validation (Philippine mobile format)
   const phoneRegex = /^09\d{9}$/;
   if (!phoneRegex.test(gcashUserNumber.replace(/-/g, ''))) {
-    alert("Please enter a valid GCash number (09XXXXXXXXX).");
+    showPopup("Please enter a valid GCash number (09XXXXXXXXX).");
     document.getElementById('gcashUserNumber').focus();
     return;
   }
   
-  if (!confirm("Confirm GCash payment? Please make sure you have sent the exact amount to our GCash number.")) {
-    return;
-  }
+  const confirmed = await showCustomConfirm("Confirm GCash payment? Please make sure you have sent the exact amount to our GCash number.");
+  if (!confirmed) return;
   
   // Proceed with payment
   document.getElementById("paymentModal").style.display = "none";
@@ -1089,8 +1259,14 @@ function processPayment(gcashUserNumber = "", gcashReference = "") {
   const payContact = document.getElementById("payContact").value || "";
   const payAddress = document.getElementById("payAddress").value || "";
 
-  if (!selectedPayment) return alert("Please choose a payment method.");
-  if (items.length === 0) return alert("Your cart is empty!");
+  if (!selectedPayment) {
+    showPopup("Please choose a payment method.");
+    return;
+  }
+  if (items.length === 0) {
+    showPopup("Your cart is empty!");
+    return;
+  }
 
   const subtotal = items.reduce((t, i) => t + i.price * i.qty, 0);
   const shippingFee = 50;
@@ -1123,9 +1299,8 @@ function processPayment(gcashUserNumber = "", gcashReference = "") {
   orders.push(order);
   localStorage.setItem("dh_orders", JSON.stringify(orders));
 
-  // Clear cart
-  cart = [];
-  localStorage.setItem("dh_cart", JSON.stringify(cart));
+  // Clear cart using the new function
+  clearCurrentCart();
 
   // ✅ Show popup first
   const popup = document.getElementById("paymentPopup");
@@ -1134,6 +1309,7 @@ function processPayment(gcashUserNumber = "", gcashReference = "") {
   // Auto-hide popup after 3 seconds and show receipt
   setTimeout(() => {
     popup.classList.remove("active");
+    previousSection = "receiptSection";
     showSection("receiptSection");
   }, 3000);
 
@@ -1205,118 +1381,47 @@ function generateReceipt(order) {
   `;
 }
 
-function printReceipt() {
-  const receiptContent = document.getElementById("receiptContent").innerHTML;
-
-  const printWindow = window.open("", "_blank");
-  printWindow.document.write(`
-    <html>
-      <head>
-        <title>🍩 Donut Haven - Receipt</title>
-        <style>
-          body {
-            font-family: 'Poppins', sans-serif;
-            background: #fff8e1;
-            margin: 0;
-            padding: 40px;
-            color: #5C4033;
-          }
-          .receipt-box {
-            background: white;
-            border: 5px solid gold;
-            border-radius: 12px;
-            padding: 30px 40px;
-            max-width: 500px;
-            width: 100%;
-            margin: 0 auto;
-            box-shadow: 0 0 20px rgba(218,165,32,0.4);
-          }
-          h2 {
-            text-align: center;
-            color: #5C4033;
-            margin-bottom: 6px;
-          }
-          h3 {
-            text-align: center;
-            margin-top: 0;
-            font-size: 15px;
-            color: #7a5b2b;
-          }
-          hr {
-            border: none;
-            border-top: 1px solid gold;
-            margin: 10px 0;
-          }
-          ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-          }
-          li {
-            border-bottom: 1px dashed #e4c86a;
-            padding: 3px 0;
-            font-size: 15px;
-          }
-          p {
-            font-size: 15px;
-            margin: 4px 0;
-          }
-          .thankyou {
-            text-align: center;
-            font-weight: bold;
-            margin-top: 10px;
-            color: #5C4033;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="receipt-box">
-          <h2>🍩 DONUT HAVEN</h2>
-          <h3>Official Receipt</h3>
-          <hr>
-          ${receiptContent}
-        </div>
-        <script>
-          window.print();
-        <\/script>
-      </body>
-    </html>
-  `);
-  printWindow.document.close();
-}
-
-function saveReceiptAsPDF() {
-  const receiptHTML = document.getElementById("receiptContent").innerHTML;
-  const receiptWindow = window.open("", "_blank");
-
-  receiptWindow.document.write(`
-    <html>
-      <head>
-        <title>Receipt - Donut Haven</title>
-        <style>
-          body {
-            font-family: 'Poppins', sans-serif;
-            background: #fff8e1;
-            border: 10px solid gold;
-            padding: 30px;
-            max-width: 600px;
-            margin: 40px auto;
-            border-radius: 12px;
-          }
-          h2, p, li { margin: 6px 0; }
-        </style>
-      </head>
-      <body>
-        
-        ${receiptHTML}
-        <script>
-          window.print();
-          window.onafterprint = () => window.close();
-        <\/script>
-      </body>
-    </html>
-  `);
-  receiptWindow.document.close();
+// Save receipt as image function
+function saveReceiptAsImage() {
+  const receiptBox = document.getElementById('receiptBox');
+  
+  // Show loading message
+  showPopup("Generating receipt image...");
+  
+  // Hide buttons temporarily for the screenshot
+  const receiptButtons = receiptBox.querySelector('.receipt-buttons');
+  const originalDisplay = receiptButtons.style.display;
+  receiptButtons.style.display = 'none';
+  
+  html2canvas(receiptBox, {
+    scale: 2, // Higher quality
+    useCORS: true,
+    logging: false,
+    backgroundColor: '#fff8e1'
+  }).then(canvas => {
+    // Restore buttons visibility
+    receiptButtons.style.display = originalDisplay;
+    
+    // Convert canvas to image data URL
+    const imageData = canvas.toDataURL('image/png');
+    
+    // Create a temporary link to download the image
+    const link = document.createElement('a');
+    link.download = `donut-haven-receipt-${Date.now()}.png`;
+    link.href = imageData;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showPopup("Receipt saved as image!");
+  }).catch(error => {
+    console.error('Error generating receipt image:', error);
+    // Restore buttons visibility in case of error
+    receiptButtons.style.display = originalDisplay;
+    showPopup("Error saving receipt. Please try again.");
+  });
 }
 
 // ---------- ORDERS (staff/admin) ----------
@@ -1339,7 +1444,7 @@ function showOrders() {
   }
 
   if (ordersToShow.length === 0) {
-    container.innerHTML = "<p>No current orders.</p>";
+    container.innerHTML = "<p class='empty-message'>No current orders. Place an order to see it here! 🍩</p>";
     return;
   }
 
@@ -1483,7 +1588,7 @@ function showHistory() {
     : orderHistory;
 
   if (visibleOrders.length === 0) {
-    container.innerHTML = "<p>No completed orders yet.</p>";
+    container.innerHTML = "<p class='empty-message'>No completed orders yet. Your order history will appear here! 🍩</p>";
     return;
   }
 
@@ -1515,7 +1620,7 @@ function showHistory() {
 function viewOrderDetails(orderId) {
   const order = orderHistory.find(o => o.id == orderId);
   if (!order) {
-    alert("Order not found.");
+    showPopup("Order not found.");
     return;
   }
 
@@ -1600,9 +1705,11 @@ function closeOrderDetails() {
 }
 
 // FIXED: Updated removeHistory function to allow staff to remove orders permanently
-function removeHistory(orderId) {
+async function removeHistory(orderId) {
   if (currentUser !== "customer" && currentUser !== "admin" && currentUser !== "staff") return;
-  if (!confirm("Are you sure you want to remove this order from history?")) return;
+  
+  const confirmed = await showCustomConfirm("Are you sure you want to remove this order from history?");
+  if (!confirmed) return;
 
   // Convert orderId to number for comparison
   const orderIdNum = Number(orderId);
@@ -1611,13 +1718,13 @@ function removeHistory(orderId) {
   const order = orderHistory.find(o => o.id === orderIdNum);
   
   if (!order) {
-    alert("Order not found in history.");
+    showPopup("Order not found in history.");
     return;
   }
   
   // Check permissions
   if (currentUser === "customer" && order.user !== currentUsername) {
-    alert("You can only remove your own orders.");
+    showPopup("You can only remove your own orders.");
     return;
   }
   
@@ -1628,32 +1735,80 @@ function removeHistory(orderId) {
     }
     hiddenHistory[currentUsername].push(orderIdNum);
     localStorage.setItem("dh_hiddenHistory", JSON.stringify(hiddenHistory));
-    alert("Order removed from your history!");
+    showPopup("Order removed from your history!");
   } else if (currentUser === "admin" || currentUser === "staff") {
     // For admin and staff: permanently remove from order history (affects everyone)
     const orderIndex = orderHistory.findIndex(o => o.id === orderIdNum);
     if (orderIndex !== -1) {
       orderHistory.splice(orderIndex, 1);
       localStorage.setItem("dh_orderHistory", JSON.stringify(orderHistory));
-      alert("Order permanently deleted from history!");
+      showPopup("Order permanently deleted from history!");
     }
   }
   
   showHistory();
 }
 
-// ---------- MANAGE USERS (admin modal) ----------
-let userFilter = "all";
-function openManageUsers() {
-  document.getElementById("manageUsersModal").style.display = "flex";
+// ========== ADMIN DASHBOARD FUNCTIONS ==========
+
+// Show admin dashboard
+function showAdminDashboard() {
+  showSection("adminDashboardSection");
+  updateAdminStats();
+}
+
+// Update admin dashboard statistics
+function updateAdminStats() {
+  // Update user statistics
+  document.getElementById("totalUsersCount").textContent = users.length;
+  document.getElementById("adminUsersCount").textContent = users.filter(u => u.role === "admin").length;
+  document.getElementById("staffUsersCount").textContent = users.filter(u => u.role === "staff").length;
+  
+  // Update login statistics
+  const today = new Date().toLocaleDateString();
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  
+  document.getElementById("totalLoginsCount").textContent = loginHistory.length;
+  document.getElementById("todayLoginsCount").textContent = loginHistory.filter(l => l.date === today).length;
+  document.getElementById("weekLoginsCount").textContent = loginHistory.filter(l => {
+    const loginDate = new Date(l.timestamp);
+    return loginDate >= oneWeekAgo;
+  }).length;
+  
+  // Update product and sales statistics
+  document.getElementById("totalProductsCount").textContent = menu.length;
+  
+  const allOrders = [...orders, ...orderHistory];
+  document.getElementById("totalSalesCount").textContent = `₱${allOrders.reduce((total, order) => total + (order.total || 0), 0).toFixed(2)}`;
+  document.getElementById("totalOrdersCount").textContent = allOrders.length;
+}
+
+// Show manage users dashboard
+function showManageUsersDashboard() {
+  showSection("manageUsersDashboardSection");
   userFilter = "all";
   renderManageUsers();
-  // Hide add user form when opening modal
+  // Hide add user form when opening
   document.getElementById("addUserSection").style.display = "none";
 }
-function closeManageUsers() {
-  document.getElementById("manageUsersModal").style.display = "none";
+
+// Show login history dashboard
+function showLoginHistoryDashboard() {
+  showSection("loginHistoryDashboardSection");
+  loginHistoryFilter = "all";
+  renderLoginHistory();
 }
+
+// Show tally product dashboard
+function showTallyProductDashboard() {
+  showSection("tallyProductDashboardSection");
+  updateTallyChart();
+  updateReviewsAnalytics();
+}
+
+// ---------- MANAGE USERS FUNCTIONS ----------
+let userFilter = "all";
 
 function toggleAddUserForm() {
   const addUserSection = document.getElementById("addUserSection");
@@ -1762,16 +1917,25 @@ function addUser() {
   const address = document.getElementById("newUserAddress").value.trim();
   const role = document.getElementById("newUserRole").value;
 
-  if (!username || !password || !email) return alert("Please fill in all required fields.");
+  if (!username || !password || !email) {
+    showPopup("Please fill in all required fields.");
+    return;
+  }
   
   if (!isValidEmail(email)) {
-    alert("Please enter a valid email address.");
+    showPopup("Please enter a valid email address.");
     return;
   }
 
   users = JSON.parse(localStorage.getItem("dh_users")) || users;
-  if (users.find(u => u.username === username)) return alert("Username already exists.");
-  if (users.find(u => u.email === email)) return alert("Email already exists.");
+  if (users.find(u => u.username === username)) {
+    showPopup("Username already exists.");
+    return;
+  }
+  if (users.find(u => u.email === email)) {
+    showPopup("Email already exists.");
+    return;
+  }
 
   const newUser = { username, email, password, role, contact, address };
   users.push(newUser);
@@ -1788,14 +1952,17 @@ function addUser() {
   document.getElementById("addUserSection").style.display = "none";
 
   renderManageUsers();
-  alert("User added successfully!");
+  showPopup("User added successfully!");
 }
 
-function removeUser(index) {
+async function removeUser(index) {
   const user = users[index];
-  if (!user) return alert("User not found.");
-  if (user.username === "admin") return alert("Cannot remove admin account.");
-  if (!confirm(`Remove user ${user.username}?`)) return;
+  if (!user) return showPopup("User not found.");
+  if (user.username === "admin") return showPopup("Cannot remove admin account.");
+  
+  const confirmed = await showCustomConfirm(`Remove user ${user.username}?`);
+  if (!confirmed) return;
+  
   users.splice(index, 1);
   localStorage.setItem("dh_users", JSON.stringify(users));
   renderManageUsers();
@@ -1803,18 +1970,8 @@ function removeUser(index) {
   hideUserDetails();
 }
 
-// ---------- LOGIN HISTORY MODAL ----------
+// ---------- LOGIN HISTORY FUNCTIONS ----------
 let loginHistoryFilter = "all";
-
-function openLoginHistoryModal() {
-  document.getElementById("loginHistoryModal").style.display = "flex";
-  loginHistoryFilter = "all";
-  renderLoginHistory();
-}
-
-function closeLoginHistoryModal() {
-  document.getElementById("loginHistoryModal").style.display = "none";
-}
 
 function filterLoginHistory(role) {
   loginHistoryFilter = role;
@@ -1850,38 +2007,28 @@ function renderLoginHistory() {
   document.getElementById("totalLogins").textContent = filtered.length;
 }
 
-function removeLoginHistory(index) {
-  if (!confirm("Are you sure you want to remove this login record?")) return;
+async function removeLoginHistory(index) {
+  const confirmed = await showCustomConfirm("Are you sure you want to remove this login record?");
+  if (!confirmed) return;
   
   loginHistory.splice(index, 1);
   localStorage.setItem("dh_loginHistory", JSON.stringify(loginHistory));
   renderLoginHistory();
-  alert("Login record removed!");
+  showPopup("Login record removed!");
 }
 
-function clearAllLoginHistory() {
-  if (!confirm("Are you sure you want to clear ALL login history? This cannot be undone.")) return;
+async function clearAllLoginHistory() {
+  const confirmed = await showCustomConfirm("Are you sure you want to clear ALL login history? This cannot be undone.");
+  if (!confirmed) return;
   
   loginHistory = [];
   localStorage.setItem("dh_loginHistory", JSON.stringify(loginHistory));
   renderLoginHistory();
-  alert("All login history cleared!");
+  showPopup("All login history cleared!");
 }
 
-// ---------- TALLY PRODUCT MODAL ----------
+// ---------- TALLY PRODUCT FUNCTIONS ----------
 let tallyChart = null;
-
-function openTallyProductModal() {
-  document.getElementById("tallyProductModal").style.display = "flex";
-  updateTallyChart();
-}
-
-function closeTallyProductModal() {
-  document.getElementById("tallyProductModal").style.display = "none";
-  if (tallyChart) {
-    tallyChart.destroy();
-  }
-}
 
 function updateTallyChart() {
   const categoryFilter = document.getElementById("tallyCategoryFilter").value;
@@ -1894,6 +2041,9 @@ function updateTallyChart() {
   document.getElementById("totalSales").textContent = `₱${tallyData.totalSales}`;
   document.getElementById("totalOrders").textContent = tallyData.totalOrders;
   document.getElementById("bestSeller").textContent = tallyData.bestSeller || "-";
+  
+  // Update total users count
+  document.getElementById("totalUsers").textContent = getTotalUsersCount();
   
   // Update chart
   const ctx = document.getElementById('tallyChart');
@@ -1950,6 +2100,96 @@ function updateTallyChart() {
   tallyChart = new Chart(ctx, config);
 }
 
+// Function to get total users count
+function getTotalUsersCount() {
+  users = JSON.parse(localStorage.getItem("dh_users")) || users;
+  return users.length;
+}
+
+// Function to update reviews analytics
+function updateReviewsAnalytics() {
+  const reviewsData = getReviewsAnalytics();
+  
+  // Update reviews statistics
+  document.getElementById("totalReviews").textContent = reviewsData.totalReviews;
+  document.getElementById("averageRating").textContent = reviewsData.averageRating.toFixed(1);
+  
+  // Update rating breakdown
+  const breakdownContainer = document.getElementById("ratingBreakdown");
+  breakdownContainer.innerHTML = "";
+  
+  reviewsData.breakdown.forEach(rating => {
+    const ratingBar = document.createElement("div");
+    ratingBar.className = "rating-bar";
+    
+    const barWidth = rating.percentage > 0 ? Math.max(rating.percentage, 5) : 0;
+    
+    ratingBar.innerHTML = `
+      <div class="rating-label">
+        <span class="stars">${"★".repeat(rating.stars)}${"☆".repeat(5 - rating.stars)}</span>
+        <span class="count">(${rating.count})</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar-fill" style="width: ${barWidth}%; background-color: ${getRatingColor(rating.stars)};"></div>
+        <span class="percentage">${rating.percentage}%</span>
+      </div>
+    `;
+    
+    breakdownContainer.appendChild(ratingBar);
+  });
+}
+
+// Function to get reviews analytics data
+function getReviewsAnalytics() {
+  reviews = JSON.parse(localStorage.getItem("dh_reviews")) || reviews;
+  
+  if (reviews.length === 0) {
+    return {
+      totalReviews: 0,
+      averageRating: 0,
+      breakdown: [
+        { stars: 5, count: 0, percentage: 0 },
+        { stars: 4, count: 0, percentage: 0 },
+        { stars: 3, count: 0, percentage: 0 },
+        { stars: 2, count: 0, percentage: 0 },
+        { stars: 1, count: 0, percentage: 0 }
+      ]
+    };
+  }
+  
+  // Calculate total reviews and average rating
+  const totalReviews = reviews.length;
+  const totalStars = reviews.reduce((sum, review) => sum + review.stars, 0);
+  const averageRating = totalStars / totalReviews;
+  
+  // Calculate breakdown by star rating
+  const breakdown = [5, 4, 3, 2, 1].map(stars => {
+    const count = reviews.filter(review => review.stars === stars).length;
+    const percentage = Math.round((count / totalReviews) * 100);
+    
+    return { stars, count, percentage };
+  });
+  
+  return {
+    totalReviews,
+    averageRating,
+    breakdown
+  };
+}
+
+// Helper function to get color based on rating
+function getRatingColor(stars) {
+  switch(stars) {
+    case 5: return '#28a745'; // Green for excellent
+    case 4: return '#20c997'; // Teal for very good
+    case 3: return '#ffc107'; // Yellow for good
+    case 2: return '#fd7e14'; // Orange for fair
+    case 1: return '#dc3545'; // Red for poor
+    default: return '#6c757d'; // Gray for no rating
+  }
+}
+
+// FIXED: getTallyData function with corrected sorting
 function getTallyData(categoryFilter, timeFilter) {
   // Combine orders and orderHistory for complete sales data
   const allOrders = [...orders, ...orderHistory];
@@ -1975,12 +2215,13 @@ function getTallyData(categoryFilter, timeFilter) {
     filteredOrders = allOrders.filter(order => new Date(order.date) >= startDate);
   }
   
-  // Calculate product sales
+  // Initialize productSales object
   const productSales = {};
   let totalSales = 0;
   let totalOrders = filteredOrders.length;
   let bestSeller = { name: '', quantity: 0 };
   
+  // Calculate product sales
   filteredOrders.forEach(order => {
     if (order.items) {
       order.items.forEach(item => {
@@ -2009,9 +2250,13 @@ function getTallyData(categoryFilter, timeFilter) {
     }
   });
   
-  // Sort by quantity sold (descending)
+  // Sort by quantity sold (descending) - FIXED VERSION
   const sortedProducts = Object.entries(productSales)
-    .sort(([, a], [, b]) => b.quantity - a.quantity);
+    .sort((a, b) => {
+      const quantityA = a[1].quantity || 0;
+      const quantityB = b[1].quantity || 0;
+      return quantityB - quantityA;
+    });
   
   const labels = sortedProducts.map(([name]) => name);
   const quantities = sortedProducts.map(([, data]) => data.quantity);
@@ -2049,88 +2294,118 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
-// close modals on outside click
+// ========== NEWSLETTER SUBSCRIPTION ==========
+function subscribeNewsletter() {
+  const email = document.getElementById('newsletterEmail').value.trim();
+  const messageEl = document.getElementById('newsletterMessage');
+  
+  if (!email) {
+    messageEl.textContent = 'Please enter your email address.';
+    messageEl.className = 'newsletter-message error';
+    return;
+  }
+  
+  if (!isValidEmail(email)) {
+    messageEl.textContent = 'Please enter a valid email address.';
+    messageEl.className = 'newsletter-message error';
+    return;
+  }
+  
+  // Get existing subscriptions from localStorage
+  let subscriptions = JSON.parse(localStorage.getItem('dh_newsletter_subscriptions')) || [];
+  
+  // Check if already subscribed
+  if (subscriptions.includes(email)) {
+    messageEl.textContent = 'You are already subscribed!';
+    messageEl.className = 'newsletter-message error';
+    return;
+  }
+  
+  // Add to subscriptions
+  subscriptions.push(email);
+  localStorage.setItem('dh_newsletter_subscriptions', JSON.stringify(subscriptions));
+  
+  // Show success message
+  messageEl.textContent = 'Thank you for subscribing to our newsletter!';
+  messageEl.className = 'newsletter-message success';
+  
+  // Clear input
+  document.getElementById('newsletterEmail').value = '';
+  
+  // Auto-hide message after 5 seconds
+  setTimeout(() => {
+    messageEl.style.display = 'none';
+  }, 5000);
+}
+
+// ========== MODAL FUNCTIONS FOR FOOTER ==========
+function openPrivacyModal() {
+  document.getElementById('privacyModal').style.display = 'flex';
+}
+
+function closePrivacyModal() {
+  document.getElementById('privacyModal').style.display = 'none';
+}
+
+function openTermsModal() {
+  document.getElementById('termsModal').style.display = 'flex';
+}
+
+function closeTermsModal() {
+  document.getElementById('termsModal').style.display = 'none';
+}
+
+// ========== FOOTER NAVIGATION ==========
+// Add click handlers for footer navigation
+document.addEventListener('DOMContentLoaded', function() {
+  // Footer links are already handled by inline onclick events
+  // Add modal close handlers
+  const modals = ['privacyModal', 'termsModal'];
+  modals.forEach(modalId => {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.addEventListener('click', function(event) {
+        if (event.target === this) {
+          this.style.display = 'none';
+        }
+      });
+    }
+  });
+  
+  // Add enter key support for newsletter
+  const newsletterInput = document.getElementById('newsletterEmail');
+  if (newsletterInput) {
+    newsletterInput.addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        subscribeNewsletter();
+      }
+    });
+  }
+});
+
+// ========== UTILITY FUNCTION FOR EMAIL VALIDATION ==========
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+// ========== UPDATE WINDOW ONCLICK FOR NEW MODALS ==========
+// Update window.onclick function to include new modals
 window.onclick = function(event) {
-  const modalIds = ["manageUsersModal", "paymentModal", "signupModal", "addMenuModal", "removeMenuModal", "userInfoModal", "loginHistoryModal", "tallyProductModal"];
+  const modalIds = [
+    "paymentModal", 
+    "signupModal", 
+    "addMenuModal", 
+    "removeMenuModal", 
+    "userInfoModal",
+    "privacyModal",
+    "termsModal"
+  ];
   modalIds.forEach(id => {
     const modal = document.getElementById(id);
     if (modal && event.target === modal) modal.style.display = "none";
   });
 };
-
-// Add touch event for better mobile interaction
-if ('ontouchstart' in window) {
-  document.addEventListener('DOMContentLoaded', function() {
-    // Add touch feedback for payment buttons
-    document.querySelectorAll('.payment-options button').forEach(btn => {
-      btn.addEventListener('touchstart', function() {
-        this.style.transform = 'scale(0.98)';
-      });
-      btn.addEventListener('touchend', function() {
-        this.style.transform = '';
-      });
-    });
-  });
-}
-
-// initialize app
-window.onload = () => {
-  // restore current user if any
-  currentUsername = localStorage.getItem("currentUsername") || "";
-  if (currentUsername) {
-    const found = users.find(u => u.username === currentUsername);
-    currentUser = found ? found.role : "customer";
-  } else {
-    currentUser = "guest";
-  }
-
-  updateNavbar();
-  showMenu();            // start on Menu so user sees items
-  renderReviewCards();
-  localStorage.setItem("dh_users", JSON.stringify(users)); // sync stored users
-  
-  // Initialize nav link handlers
-  setupNavLinkHandlers();
-};
-
-// ========== SPLASH SCREEN FUNCTIONALITY ==========
-function initializeSplashScreen() {
-  const splashScreen = document.getElementById('splashScreen');
-  
-  // Show splash screen for 5 seconds then transition to home
-  setTimeout(() => {
-    splashScreen.classList.add('fade-out');
-    
-    // After fade out animation completes, hide splash and show home
-    setTimeout(() => {
-      splashScreen.style.display = 'none';
-      showSection('homeSection');
-      
-      // Initialize the rest of the app
-      initializeApp();
-    }, 800); // Match this with CSS transition duration
-  }, 5000); // 5 seconds
-}
-
-function initializeApp() {
-  // restore current user if any
-  currentUsername = localStorage.getItem("currentUsername") || "";
-  if (currentUsername) {
-    const found = users.find(u => u.username === currentUsername);
-    currentUser = found ? found.role : "customer";
-  } else {
-    currentUser = "guest";
-  }
-
-  updateNavbar();
-  showMenu();            // start on Menu so user sees items
-  renderReviewCards();
-  localStorage.setItem("dh_users", JSON.stringify(users)); // sync stored users
-  
-  // Initialize nav link handlers
-  setupNavLinkHandlers();
-}
-
 
 // initialize app - ONLY CALL SPLASH SCREEN
 window.onload = () => {
