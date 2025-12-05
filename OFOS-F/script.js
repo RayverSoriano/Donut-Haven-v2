@@ -971,7 +971,7 @@ function showCategory(cat) {
       }
 
       div.innerHTML = `
-        <img src="${item.img}">
+        <img src="${item.img}" alt="${escapeHtml(item.name)}">
         <h3>${escapeHtml(item.name)}</h3>
         <p>₱${item.price}</p>
         <div style="display:flex; justify-content:center; gap:8px;">
@@ -1104,31 +1104,46 @@ function showCart() {
   let subtotal = 0;
   cart.forEach((item, i) => {
     subtotal += item.price * item.qty;
-    container.innerHTML += `
-      <div class="cart-item">
-        <img src="${item.img}" class="cart-img">
-        <div class="cart-info">
-          <h4>${escapeHtml(item.name)}</h4>
-          <p>₱${item.price} x ${item.qty}</p>
-        </div>
-        <div class="cart-qty">
-          <button class="qty-btn" onclick="changeQty(${i}, -1)">−</button>
-          <span>${item.qty}</span>
-          <button class="qty-btn" onclick="changeQty(${i}, 1)">+</button>
-        </div>
-      </div>`;
+    const itemTotal = item.price * item.qty;
+    
+    // FIXED: Create a uniform cart item structure
+    const cartItemDiv = document.createElement("div");
+    cartItemDiv.className = "cart-item";
+    cartItemDiv.innerHTML = `
+      <div class="cart-img-container">
+        <img src="${item.img}" alt="${escapeHtml(item.name)}" class="cart-img">
+      </div>
+      <div class="cart-info">
+        <h4>${escapeHtml(item.name)}</h4>
+        <p class="cart-price">₱${item.price} x ${item.qty} = ₱${itemTotal}</p>
+      </div>
+      <div class="cart-qty">
+        <button class="qty-btn" onclick="changeQty(${i}, -1)">−</button>
+        <span class="qty-display">${item.qty}</span>
+        <button class="qty-btn" onclick="changeQty(${i}, 1)">+</button>
+      </div>
+    `;
+    container.appendChild(cartItemDiv);
   });
   
   const shippingFee = 50;
   const total = subtotal + shippingFee;
   
   totalContainer.innerHTML = `
-    <h3>Subtotal: ₱${subtotal}</h3>
-    <h3>Shipping Fee: ₱${shippingFee}</h3>
-    <h2>Total: ₱${total}</h2>
+    <div class="cart-summary-row">
+      <span>Subtotal:</span>
+      <span>₱${subtotal}</span>
+    </div>
+    <div class="cart-summary-row">
+      <span>Shipping Fee:</span>
+      <span>₱${shippingFee}</span>
+    </div>
+    <div class="cart-summary-row total-row">
+      <span>Total:</span>
+      <span>₱${total}</span>
+    </div>
   `;
 }
-
 
 function changeQty(index, delta) {
   cart[index].qty += delta;
